@@ -27,7 +27,7 @@
 #include "atecc608a.h"
 
 #define THYONE_DEFAULT_RF_CHANNEL 21
-#define THYONE_DEFAULT_RF_PROFILE 0
+#define THYONE_DEFAULT_RF_PROFILE 2
 
 /*Configure the FeatherWing either as a transmitter or a receiver*/
 #define Transmitter 0
@@ -42,7 +42,7 @@ String msg1;
 // Thyone I object
 THYONEI *thyoneI;
 
-// Serial communication port for Thyone-I
+// Serial communication port for Thyone-Iblank\wone\app.html
 TypeHardwareSerial *SerialThyoneI;
 
 void SERCOM1_Handler() { ThyoneIUART.IrqHandler(); }
@@ -50,7 +50,6 @@ void SERCOM1_Handler() { ThyoneIUART.IrqHandler(); }
 void setup() {
     delay(5000);
     uint8_t serialNrThy[4] = {0};
-
     // Using the USB serial port for debug messages
     SerialDebug = SSerial_create(&Serial);
     SSerial_begin(SerialDebug, 115200);
@@ -115,10 +114,8 @@ void setup() {
     } else {
         SSerial_printf(SerialDebug, "Thyone get power failed \r\n");
     }
-}
-void loop() {
-#if Transmitter
-    unsigned char sendBuffer[32] = "Hello from Thyone-I FeatherWing";
+
+        unsigned char sendBuffer[32] = "Hello from Thyone-I FeatherWing";
     /*Broadcast Hello message to all the peers in the network*/
     if (ThyoneI_TransmitBroadcast(thyoneI, sendBuffer, 32)) {
         SSerial_printf(SerialDebug, "Broadcast sent! \r\n");
@@ -126,7 +123,55 @@ void loop() {
         SSerial_printf(SerialDebug, "Broadcast send failed \r\n");
     }
     delay(1000);
-#else
+}
+void loop() 
+{
+
+    // while (ThyoneIUART.available()>0) 
+    // {
+    //     Serial.print(ThyoneIUART.read());
+    // }
+    
+// #if Transmitter
+    // unsigned char sendBuffer[32] = "Hello from Thyone-I FeatherWing";
+    // /*Broadcast Hello message to all the peers in the network*/
+    // if (ThyoneI_TransmitBroadcast(thyoneI, sendBuffer, 32)) {
+    //     SSerial_printf(SerialDebug, "Broadcast sent! \r\n");
+    // } else {
+    //     SSerial_printf(SerialDebug, "Broadcast send failed \r\n");
+    // }
+    // delay(1000);
+// #else
+
+
+  if (Serial.available())
+  {
+    while (Serial.available() > 0)
+    {
+      String str = Serial.readStringUntil('\n');
+      char strdata[60];
+      str.toCharArray(strdata, 60); // Converted String to char.
+      /*Broadcast Hello message to all the peers in the network
+      ThyoneI_TransmitUnicast to send to programmed destination addres
+      ThyoneI_TransmitUnicastExtended to a supplied address
+      ThyoneI_TransmitMulticast to a group
+      */
+
+     //! https://www.scadacore.com/tools/programming-calculators/online-checksum-calculator/
+     // use the above link to work out the checksum which includes the start bit 0x02
+     
+     int strLength = strlen(strdata);
+      if (ThyoneI_TransmitBroadcast(thyoneI, (uint8_t *)strdata, strLength))
+      {
+        // SSerial_printf(SerialDebug, "Broadcast sent! \r\n");
+      }
+      else
+      {
+        SSerial_printf(SerialDebug, "Broadcast send failed \r\n");
+      }
+    }
+  }
+
     PacketThyoneI dataReceived;
     dataReceived = THYONEI_receiveData(thyoneI);
     // Print the received packet
@@ -140,5 +185,5 @@ void loop() {
         SSerial_printf(SerialDebug, "Payload[%u byte]: %s\r\n",
                        dataReceived.length, dataReceived.data);
     }
-#endif
+// #endif
 }
